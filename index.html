@@ -712,10 +712,10 @@
     <div class="card" style="animation-delay:0.05s">
       <div class="card-label">01 / Anthropic API Key</div>
       <div class="api-row">
-        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+        <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off">
         <button class="btn-icon" onclick="toggleKey()">👁</button>
       </div>
-      <p class="input-hint">Key ไม่ถูกบันทึก · ใช้เฉพาะใน session นี้</p>
+      <p class="input-hint">ฟรี 1,500 req/วัน · ขอ key ได้ที่ aistudio.google.com · ไม่ถูกบันทึก</p>
     </div>
 
     <!-- THRESHOLD -->
@@ -802,7 +802,7 @@
   </div>
 
   <footer>
-    <span>Resume Screener · Powered by Claude claude-sonnet-4-20250514</span>
+    <span>Resume Screener · Powered by Gemini 2.0 Flash (Free)</span>
     <span>Static deploy · API key stays in your browser</span>
   </footer>
 
@@ -928,7 +928,7 @@ async function runScreening() {
 
   // Validate
   if (!apiKey) return showError('กรุณากรอก Anthropic API Key');
-  if (!apiKey.startsWith('sk-ant-')) return showError('API Key ไม่ถูกต้อง (ต้องขึ้นต้นด้วย sk-ant-)');
+  if (!apiKey.startsWith('AIza')) return showError('API Key ไม่ถูกต้อง (ต้องขึ้นต้นด้วย AIza)');
   if (!jd && state.keywords.length === 0) return showError('กรุณากรอก Job Description หรือเพิ่ม Keyword อย่างน้อย 1 รายการ');
   if (state.files.length === 0) return showError('กรุณาเพิ่มไฟล์ PDF อย่างน้อย 1 ไฟล์');
 
@@ -1041,20 +1041,17 @@ ${resumeText.substring(0, 6000)}
 - 50-69: พอใช้ได้ ขาดบางส่วน
 - 0-49: ไม่เหมาะสม ขาดคุณสมบัติสำคัญ`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.2 }
+      })
+    }
+  );
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -1062,7 +1059,7 @@ ${resumeText.substring(0, 6000)}
   }
 
   const data = await response.json();
-  const rawText = data.content?.[0]?.text || '';
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   try {
     const clean = rawText.replace(/```json|```/g, '').trim();
