@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Screener — AI-Powered</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a08;
+    --surface: #111110;
+    --surface2: #1a1a18;
+    --border: #2a2a28;
+    --border-bright: #3a3a38;
+    --text: #f0ede6;
+    --text-dim: #888882;
+    --text-dimmer: #555550;
+    --accent: #c8f060;
+    --accent-dim: #8aab2a;
+    --accent-bg: rgba(200, 240, 96, 0.06);
+    --pass: #60f0a8;
+    --pass-bg: rgba(96, 240, 168, 0.08);
+    --fail: #f06060;
+    --fail-bg: rgba(240, 96, 96, 0.08);
+    --warn: #f0c060;
+    --warn-bg: rgba(240, 192, 96, 0.08);
+    --radius: 8px;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Instrument Serif', serif;
+    --sans: 'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    margin-bottom: 56px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .header-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  header h1 {
+    font-family: var(--serif);
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  header h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .header-sub {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--text-dim);
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .grid-full { grid-column: 1 / -1; }
+
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+  .card:nth-child(4) { animation-delay: 0.2s; }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── INPUTS ── */
+  input[type="text"], input[type="password"], textarea, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+
+  input[type="text"]:focus, input[type="password"]:focus,
+  textarea:focus, select:focus {
+    border-color: var(--accent);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--text-dimmer);
+  }
+
+  textarea { min-height: 110px; line-height: 1.6; }
+
+  .input-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dimmer);
+    margin-top: 6px;
+  }
+
+  /* ── API KEY ROW ── */
+  .api-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .api-row input { flex: 1; }
+
+  .btn-icon {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 9px 12px;
+    font-size: 14px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-icon:hover { border-color: var(--border-bright); color: var(--text); }
+
+  /* ── FILE DROP ZONE ── */
+  .dropzone {
+    border: 1.5px dashed var(--border-bright);
+    border-radius: var(--radius);
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  .dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .dropzone-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  .dropzone-text {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  .dropzone-text strong { color: var(--accent); }
+  .dropzone-hint { font-family: var(--mono); font-size: 11px; color: var(--text-dimmer); margin-top: 6px; }
+
+  /* ── FILE LIST ── */
+  .file-list {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .file-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    animation: slideIn 0.2s ease both;
+  }
+
+  .file-chip-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-chip-size { color: var(--text-dimmer); }
+  .file-chip-remove {
+    background: none;
+    border: none;
+    color: var(--text-dimmer);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.15s;
+  }
+  .file-chip-remove:hover { color: var(--fail); }
+
+  /* ── KEYWORD TAGS ── */
+  .tag-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .tag-input-row input { flex: 1; }
+
+  .tags-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-dim);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    animation: slideIn 0.15s ease both;
+  }
+
+  .tag-remove {
+    background: none;
+    border: none;
+    color: var(--accent-dim);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .tag-remove:hover { color: var(--fail); }
+
+  /* ── SCORE THRESHOLD ── */
+  .threshold-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 10px;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border-bright);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .threshold-val {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    min-width: 48px;
+    text-align: right;
+  }
+
+  /* ── RUN BUTTON ── */
+  .btn-run {
+    width: 100%;
+    background: var(--accent);
+    color: #0a0a08;
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px 32px;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-run::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+  }
+
+  .btn-run:hover::before { transform: translateX(0); }
+  .btn-run:active { transform: scale(0.98); }
+  .btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-run:disabled::before { display: none; }
+
+  /* ── PROGRESS ── */
+  .progress-section {
+    display: none;
+    margin-top: 20px;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .progress-section.active { display: block; }
+
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .progress-log {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    max-height: 120px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .log-line { display: flex; gap: 10px; }
+  .log-time { color: var(--text-dimmer); }
+  .log-msg { color: var(--text-dim); }
+  .log-msg.ok { color: var(--pass); }
+  .log-msg.fail { color: var(--fail); }
+  .log-msg.info { color: var(--accent); }
+
+  /* ── RESULTS ── */
+  .results-section {
+    display: none;
+    margin-top: 32px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .results-section.active { display: block; }
+
+  .results-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .results-title {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 400;
+  }
+
+  .results-stats {
+    display: flex;
+    gap: 16px;
+  }
+
+  .stat-pill {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  .stat-pill.pass { color: var(--pass); border-color: var(--pass); background: var(--pass-bg); }
+  .stat-pill.fail { color: var(--fail); border-color: var(--fail); background: var(--fail-bg); }
+  .stat-pill.total { color: var(--text-dim); border-color: var(--border); }
+
+  .results-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    cursor: pointer;
+    padding: 9px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--border-bright); }
+  .btn-secondary.accent { border-color: var(--accent); color: var(--accent); }
+  .btn-secondary.accent:hover { background: var(--accent-bg); }
+
+  /* ── RESULT CARDS ── */
+  .result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeUp 0.3s ease both;
+    transition: border-color 0.2s;
+  }
+
+  .result-card:hover { border-color: var(--border-bright); }
+  .result-card.pass { border-left: 3px solid var(--pass); }
+  .result-card.fail { border-left: 3px solid var(--fail); }
+
+  .result-card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+  }
+
+  .result-score {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    min-width: 52px;
+    text-align: center;
+  }
+
+  .result-score.pass { color: var(--pass); }
+  .result-score.fail { color: var(--fail); }
+
+  .result-info { flex: 1; min-width: 0; }
+  .result-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .result-verdict {
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  .result-verdict.pass { color: var(--pass); }
+  .result-verdict.fail { color: var(--fail); }
+
+  .result-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+
+  .badge.found { color: var(--pass); border-color: var(--pass); background: var(--pass-bg); }
+  .badge.missing { color: var(--fail); border-color: var(--fail); background: var(--fail-bg); }
+
+  .result-toggle {
+    background: none;
+    border: none;
+    color: var(--text-dimmer);
+    cursor: pointer;
+    font-size: 18px;
+    transition: transform 0.2s, color 0.2s;
+    padding: 4px;
+  }
+
+  .result-toggle:hover { color: var(--text); }
+  .result-card.expanded .result-toggle { transform: rotate(180deg); }
+
+  .result-detail {
+    display: none;
+    padding: 0 20px 16px;
+    border-top: 1px solid var(--border);
+    margin-top: 0;
+  }
+
+  .result-card.expanded .result-detail { display: block; }
+
+  .result-analysis {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-top: 12px;
+    white-space: pre-wrap;
+    font-family: var(--mono);
+  }
+
+  .score-bar-wrap {
+    background: var(--surface2);
+    border-radius: 3px;
+    height: 4px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+
+  .score-bar.pass { background: var(--pass); }
+  .score-bar.fail { background: var(--fail); }
+
+  /* ── EMPTY / ERROR STATES ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-dimmer);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .error-toast {
+    display: none;
+    background: var(--fail-bg);
+    border: 1px solid var(--fail);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--fail);
+    margin-top: 12px;
+    animation: fadeUp 0.2s ease both;
+  }
+
+  .error-toast.active { display: block; }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dimmer);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+  /* ── FILTER ROW ── */
+  .filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 5px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-eyebrow">// AI-Powered Recruitment Tool</div>
+    <h1>Resume <em>Screener</em></h1>
+    <p class="header-sub">อัปโหลด PDF หลายไฟล์ · กำหนดเกณฑ์ JD + Keywords · ให้ Claude คัดกรองอัตโนมัติ</p>
+  </header>
+
+  <!-- SETUP GRID -->
+  <div class="grid">
+
+    <!-- API KEY -->
+    <div class="card" style="animation-delay:0.05s">
+      <div class="card-label">01 / Anthropic API Key</div>
+      <div class="api-row">
+        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+        <button class="btn-icon" onclick="toggleKey()">👁</button>
+      </div>
+      <p class="input-hint">Key ไม่ถูกบันทึก · ใช้เฉพาะใน session นี้</p>
+    </div>
+
+    <!-- THRESHOLD -->
+    <div class="card" style="animation-delay:0.1s">
+      <div class="card-label">02 / Pass Score Threshold</div>
+      <div class="threshold-row">
+        <input type="range" id="threshold" min="0" max="100" value="70" oninput="updateThreshold()">
+        <div class="threshold-val" id="thresholdVal">70%</div>
+      </div>
+      <p class="input-hint">Resume ที่ได้คะแนน AI ≥ threshold จะถือว่า "ผ่าน"</p>
+    </div>
+
+    <!-- JOB DESCRIPTION -->
+    <div class="card" style="animation-delay:0.15s">
+      <div class="card-label">03 / Job Description</div>
+      <textarea id="jd" placeholder="วางรายละเอียดตำแหน่งงานที่นี่&#10;&#10;ตัวอย่าง:&#10;ต้องการ Software Engineer ที่มีประสบการณ์ React ≥ 3 ปี&#10;ทักษะ Node.js, TypeScript จะได้รับการพิจารณาเป็นพิเศษ&#10;สามารถทำงานเป็นทีมและสื่อสารภาษาอังกฤษได้ดี"></textarea>
+    </div>
+
+    <!-- KEYWORDS -->
+    <div class="card" style="animation-delay:0.2s">
+      <div class="card-label">04 / Required Keywords / Conditions</div>
+      <div class="tag-input-row">
+        <input type="text" id="keywordInput" placeholder="เพิ่ม keyword แล้วกด Enter" onkeydown="addKeyword(event)">
+        <button class="btn-icon" onclick="addKeywordBtn()">+</button>
+      </div>
+      <div class="tags-wrap" id="tagsWrap">
+        <!-- tags rendered here -->
+      </div>
+      <p class="input-hint" style="margin-top:10px">ตัวอย่าง: Python · 5+ years · MBA · AWS certified</p>
+    </div>
+
+    <!-- FILE UPLOAD -->
+    <div class="card grid-full" style="animation-delay:0.25s">
+      <div class="card-label">05 / Upload Resume PDFs</div>
+      <div class="dropzone" id="dropzone" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave()">
+        <input type="file" id="fileInput" multiple accept=".pdf" onchange="handleFiles(event.target.files)">
+        <div class="dropzone-icon">📄</div>
+        <div class="dropzone-text"><strong>คลิกเพื่อเลือก</strong> หรือลาก PDF มาวางที่นี่</div>
+        <div class="dropzone-hint">รองรับ PDF เท่านั้น · หลายไฟล์พร้อมกันได้</div>
+      </div>
+      <div class="file-list" id="fileList"></div>
+    </div>
+
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-toast" id="errorToast"></div>
+
+  <!-- RUN BUTTON -->
+  <button class="btn-run" id="runBtn" onclick="runScreening()">
+    ▶ เริ่มคัดกรอง Resume
+  </button>
+
+  <!-- PROGRESS -->
+  <div class="progress-section" id="progressSection">
+    <div class="card" style="margin-top:0">
+      <div class="card-label">Processing</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-log" id="progressLog"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+    <div class="results-header">
+      <h2 class="results-title">ผลการคัดกรอง</h2>
+      <div class="results-stats" id="resultStats"></div>
+    </div>
+
+    <div class="results-actions">
+      <div class="filter-row" id="filterRow">
+        <button class="filter-btn active" onclick="filterResults('all', this)">ทั้งหมด</button>
+        <button class="filter-btn" onclick="filterResults('pass', this)">✅ ผ่าน</button>
+        <button class="filter-btn" onclick="filterResults('fail', this)">❌ ไม่ผ่าน</button>
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn-secondary accent" onclick="downloadPassed()">⬇ ดาวน์โหลด Resume ที่ผ่าน (ZIP)</button>
+      <button class="btn-secondary" onclick="exportCSV()">📊 Export CSV</button>
+    </div>
+
+    <div class="result-list" id="resultList"></div>
+  </div>
+
+  <footer>
+    <span>Resume Screener · Powered by Claude claude-sonnet-4-20250514</span>
+    <span>Static deploy · API key stays in your browser</span>
+  </footer>
+
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  files: [],
+  keywords: [],
+  results: [],
+  currentFilter: 'all'
+};
+
+// ── PDF.js setup ──
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── API KEY TOGGLE ──
+function toggleKey() {
+  const el = document.getElementById('apiKey');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+// ── THRESHOLD ──
+function updateThreshold() {
+  const v = document.getElementById('threshold').value;
+  document.getElementById('thresholdVal').textContent = v + '%';
+}
+
+// ── KEYWORDS ──
+function addKeyword(e) {
+  if (e.key === 'Enter') addKeywordBtn();
+}
+
+function addKeywordBtn() {
+  const input = document.getElementById('keywordInput');
+  const val = input.value.trim();
+  if (!val || state.keywords.includes(val)) return;
+  state.keywords.push(val);
+  input.value = '';
+  renderTags();
+}
+
+function removeKeyword(kw) {
+  state.keywords = state.keywords.filter(k => k !== kw);
+  renderTags();
+}
+
+function renderTags() {
+  const wrap = document.getElementById('tagsWrap');
+  wrap.innerHTML = state.keywords.map(k => `
+    <span class="tag">${escHtml(k)}<button class="tag-remove" onclick="removeKeyword('${escHtml(k)}')">×</button></span>
+  `).join('');
+}
+
+// ── FILES ──
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.add('drag-over');
+}
+
+function handleDragLeave() {
+  document.getElementById('dropzone').classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('drag-over');
+  const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
+  addFiles(files);
+}
+
+function handleFiles(fileList) {
+  addFiles([...fileList]);
+}
+
+function addFiles(newFiles) {
+  newFiles.forEach(f => {
+    if (!state.files.find(x => x.name === f.name && x.size === f.size)) {
+      state.files.push(f);
+    }
+  });
+  renderFileList();
+}
+
+function removeFile(idx) {
+  state.files.splice(idx, 1);
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = state.files.map((f, i) => `
+    <div class="file-chip">
+      <span>📄</span>
+      <span class="file-chip-name">${escHtml(f.name)}</span>
+      <span class="file-chip-size">${formatBytes(f.size)}</span>
+      <button class="file-chip-remove" onclick="removeFile(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+// ── PDF TEXT EXTRACTION ──
+async function extractPdfText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return text.trim();
+}
+
+// ── MAIN SCREENING ──
+async function runScreening() {
+  clearError();
+
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const jd = document.getElementById('jd').value.trim();
+  const threshold = parseInt(document.getElementById('threshold').value);
+
+  // Validate
+  if (!apiKey) return showError('กรุณากรอก Anthropic API Key');
+  if (!apiKey.startsWith('sk-ant-')) return showError('API Key ไม่ถูกต้อง (ต้องขึ้นต้นด้วย sk-ant-)');
+  if (!jd && state.keywords.length === 0) return showError('กรุณากรอก Job Description หรือเพิ่ม Keyword อย่างน้อย 1 รายการ');
+  if (state.files.length === 0) return showError('กรุณาเพิ่มไฟล์ PDF อย่างน้อย 1 ไฟล์');
+
+  // Reset
+  state.results = [];
+  const runBtn = document.getElementById('runBtn');
+  runBtn.disabled = true;
+  runBtn.textContent = '⏳ กำลังประมวลผล...';
+
+  document.getElementById('progressSection').classList.add('active');
+  document.getElementById('resultsSection').classList.remove('active');
+  document.getElementById('progressLog').innerHTML = '';
+  setProgress(0);
+
+  const total = state.files.length;
+
+  for (let i = 0; i < total; i++) {
+    const file = state.files[i];
+    log(`กำลังอ่าน: ${file.name}`, 'info');
+
+    try {
+      // Extract PDF text
+      const text = await extractPdfText(file);
+      if (!text || text.length < 50) {
+        log(`${file.name} — อ่านข้อความไม่ได้ (อาจเป็น scanned PDF)`, 'fail');
+        state.results.push({
+          file,
+          name: file.name,
+          score: 0,
+          passed: false,
+          verdict: 'อ่าน PDF ไม่ได้',
+          analysis: 'ไม่สามารถดึงข้อความจาก PDF ได้ อาจเป็นไฟล์ที่ scan มา',
+          keywordsFound: [],
+          keywordsMissing: state.keywords,
+          text: ''
+        });
+        setProgress(Math.round(((i + 1) / total) * 100));
+        continue;
+      }
+
+      log(`วิเคราะห์ด้วย AI: ${file.name}`, 'info');
+
+      // Call Claude API
+      const result = await analyzeResume(text, jd, state.keywords, threshold, apiKey);
+      result.file = file;
+      result.name = file.name;
+      result.passed = result.score >= threshold;
+      state.results.push(result);
+
+      if (result.passed) {
+        log(`${file.name} — ผ่าน (${result.score}%)`, 'ok');
+      } else {
+        log(`${file.name} — ไม่ผ่าน (${result.score}%)`, 'fail');
+      }
+
+    } catch (err) {
+      log(`${file.name} — Error: ${err.message}`, 'fail');
+      state.results.push({
+        file,
+        name: file.name,
+        score: 0,
+        passed: false,
+        verdict: 'เกิดข้อผิดพลาด',
+        analysis: err.message,
+        keywordsFound: [],
+        keywordsMissing: state.keywords,
+        text: ''
+      });
+    }
+
+    setProgress(Math.round(((i + 1) / total) * 100));
+  }
+
+  log('เสร็จสิ้น', 'ok');
+  runBtn.disabled = false;
+  runBtn.textContent = '▶ เริ่มคัดกรอง Resume';
+
+  renderResults(threshold);
+}
+
+// ── CLAUDE API CALL ──
+async function analyzeResume(resumeText, jd, keywords, threshold, apiKey) {
+  const kwSection = keywords.length > 0
+    ? `\n\nREQUIRED KEYWORDS/CONDITIONS (ต้องตรวจสอบทีละรายการ):\n${keywords.map((k, i) => `${i + 1}. ${k}`).join('\n')}`
+    : '';
+
+  const prompt = `คุณคือผู้เชี่ยวชาญด้านการคัดเลือกบุคลากร วิเคราะห์ resume ด้านล่างและให้คะแนนความเหมาะสม
+
+JOB DESCRIPTION:
+${jd || '(ไม่ได้ระบุ — ประเมินจาก keywords เท่านั้น)'}
+${kwSection}
+
+RESUME TEXT:
+---
+${resumeText.substring(0, 6000)}
+---
+
+ตอบกลับใน JSON format เท่านั้น ไม่มี markdown backticks:
+{
+  "score": <0-100>,
+  "verdict": "<สรุปสั้น 1 ประโยค>",
+  "analysis": "<วิเคราะห์ละเอียด 3-5 ประโยค: จุดเด่น จุดด้อย ความเหมาะสมกับตำแหน่ง>",
+  "keywordsFound": [<keywords ที่พบในแต่ละรายการ>],
+  "keywordsMissing": [<keywords ที่ไม่พบ>]
+}
+
+เกณฑ์คะแนน:
+- 90-100: เหมาะสมมาก ตรงทุกข้อ
+- 70-89: เหมาะสมดี ตรงส่วนใหญ่
+- 50-69: พอใช้ได้ ขาดบางส่วน
+- 0-49: ไม่เหมาะสม ขาดคุณสมบัติสำคัญ`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `API Error ${response.status}`);
+  }
+
+  const data = await response.json();
+  const rawText = data.content?.[0]?.text || '';
+
+  try {
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    return {
+      score: Math.max(0, Math.min(100, parseInt(parsed.score) || 0)),
+      verdict: parsed.verdict || '',
+      analysis: parsed.analysis || '',
+      keywordsFound: Array.isArray(parsed.keywordsFound) ? parsed.keywordsFound : [],
+      keywordsMissing: Array.isArray(parsed.keywordsMissing) ? parsed.keywordsMissing : []
+    };
+  } catch {
+    return {
+      score: 0,
+      verdict: 'Parse error',
+      analysis: rawText,
+      keywordsFound: [],
+      keywordsMissing: keywords
+    };
+  }
+}
+
+// ── RENDER RESULTS ──
+function renderResults(threshold) {
+  const section = document.getElementById('resultsSection');
+  section.classList.add('active');
+
+  const passed = state.results.filter(r => r.passed).length;
+  const failed = state.results.filter(r => !r.passed).length;
+
+  document.getElementById('resultStats').innerHTML = `
+    <span class="stat-pill total">รวม ${state.results.length}</span>
+    <span class="stat-pill pass">✅ ผ่าน ${passed}</span>
+    <span class="stat-pill fail">❌ ไม่ผ่าน ${failed}</span>
+  `;
+
+  renderResultCards(state.currentFilter);
+}
+
+function renderResultCards(filter) {
+  const list = document.getElementById('resultList');
+  let results = [...state.results].sort((a, b) => b.score - a.score);
+
+  if (filter === 'pass') results = results.filter(r => r.passed);
+  if (filter === 'fail') results = results.filter(r => !r.passed);
+
+  if (results.length === 0) {
+    list.innerHTML = '<div class="empty-state">ไม่มีผลลัพธ์ที่ตรงกับตัวกรอง</div>';
+    return;
+  }
+
+  list.innerHTML = results.map((r, i) => {
+    const cls = r.passed ? 'pass' : 'fail';
+    const kwFoundHtml = r.keywordsFound.map(k => `<span class="badge found">✓ ${escHtml(k)}</span>`).join('');
+    const kwMissingHtml = r.keywordsMissing.map(k => `<span class="badge missing">✗ ${escHtml(k)}</span>`).join('');
+
+    return `
+    <div class="result-card ${cls}" id="rc-${i}">
+      <div class="result-card-header" onclick="toggleCard(${i})">
+        <div class="result-score ${cls}">${r.score}%</div>
+        <div class="result-info">
+          <div class="result-name">${escHtml(r.name)}</div>
+          <div class="result-verdict ${cls}">${r.passed ? '✅ ผ่านเกณฑ์' : '❌ ไม่ผ่านเกณฑ์'} · ${escHtml(r.verdict)}</div>
+          ${(kwFoundHtml || kwMissingHtml) ? `<div class="result-badges">${kwFoundHtml}${kwMissingHtml}</div>` : ''}
+        </div>
+        <button class="result-toggle">▾</button>
+      </div>
+      <div class="result-detail">
+        <div class="score-bar-wrap"><div class="score-bar ${cls}" style="width:${r.score}%"></div></div>
+        <div class="result-analysis">${escHtml(r.analysis)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(i) {
+  const card = document.getElementById(`rc-${i}`);
+  card.classList.toggle('expanded');
+}
+
+function filterResults(filter, btn) {
+  state.currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderResultCards(filter);
+}
+
+// ── DOWNLOAD ZIP (passed only) ──
+async function downloadPassed() {
+  const passed = state.results.filter(r => r.passed);
+  if (passed.length === 0) return showError('ไม่มี Resume ที่ผ่านเกณฑ์');
+
+  const zip = new JSZip();
+  for (const r of passed) {
+    const ab = await r.file.arrayBuffer();
+    zip.file(r.file.name, ab);
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `passed_resumes_${new Date().toISOString().slice(0,10)}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── EXPORT CSV ──
+function exportCSV() {
+  if (state.results.length === 0) return showError('ยังไม่มีผลลัพธ์');
+
+  const header = ['ชื่อไฟล์', 'คะแนน', 'สถานะ', 'สรุป', 'Keywords ที่พบ', 'Keywords ที่ขาด'];
+  const rows = state.results.map(r => [
+    r.name,
+    r.score,
+    r.passed ? 'ผ่าน' : 'ไม่ผ่าน',
+    r.verdict.replace(/,/g, ';'),
+    r.keywordsFound.join('; '),
+    r.keywordsMissing.join('; ')
+  ]);
+
+  const csv = [header, ...rows].map(row => row.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `screening_results_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── UTILITIES ──
+function setProgress(pct) {
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function log(msg, type = '') {
+  const logEl = document.getElementById('progressLog');
+  const now = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${now}</span><span class="log-msg ${type}">${escHtml(msg)}</span>`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorToast');
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('active');
+}
+
+function clearError() {
+  document.getElementById('errorToast').classList.remove('active');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+</script>
+</body>
+</html>
