@@ -10,23 +10,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root {
-    --bg: #0a0a08;
-    --surface: #111110;
-    --surface2: #1a1a18;
-    --border: #2a2a28;
-    --border-bright: #3a3a38;
-    --text: #f0ede6;
-    --text-dim: #888882;
-    --text-dimmer: #555550;
-    --accent: #c8f060;
-    --accent-dim: #8aab2a;
-    --accent-bg: rgba(200, 240, 96, 0.06);
-    --pass: #60f0a8;
-    --pass-bg: rgba(96, 240, 168, 0.08);
-    --fail: #f06060;
-    --fail-bg: rgba(240, 96, 96, 0.08);
-    --warn: #f0c060;
-    --warn-bg: rgba(240, 192, 96, 0.08);
+    --bg: #f5f2ed;
+    --surface: #ffffff;
+    --surface2: #f0ece6;
+    --border: #e0d9cf;
+    --border-bright: #c8bfb2;
+    --text: #2d2820;
+    --text-dim: #7a6f63;
+    --text-dimmer: #b0a698;
+    --accent: #5c7a5c;
+    --accent-dim: #3d5c3d;
+    --accent-bg: rgba(92, 122, 92, 0.08);
+    --pass: #3a7a52;
+    --pass-bg: rgba(58, 122, 82, 0.08);
+    --fail: #a84040;
+    --fail-bg: rgba(168, 64, 64, 0.08);
+    --warn: #8a6a20;
+    --warn-bg: rgba(138, 106, 32, 0.08);
     --radius: 8px;
     --mono: 'DM Mono', monospace;
     --serif: 'Instrument Serif', serif;
@@ -43,16 +43,8 @@
     overflow-x: hidden;
   }
 
-  /* ── NOISE TEXTURE OVERLAY ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1000;
-    opacity: 0.4;
-  }
+
+
 
   /* ── LAYOUT ── */
   .app {
@@ -357,7 +349,7 @@
   .btn-run {
     width: 100%;
     background: var(--accent);
-    color: #0a0a08;
+    color: #ffffff;
     border: none;
     border-radius: var(--radius);
     padding: 16px 32px;
