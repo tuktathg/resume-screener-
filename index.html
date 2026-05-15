@@ -802,7 +802,7 @@
   </div>
 
   <footer>
-    <span>Resume Screener · Powered by Claude claude-sonnet-4-20250514</span>
+    <span>Resume Screener · Powered by Claude Sonnet 4.5</span>
     <span>Static deploy · API key stays in your browser</span>
   </footer>
 
@@ -1050,7 +1050,7 @@ ${resumeText.substring(0, 6000)}
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }]
     })
