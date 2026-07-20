@@ -18,7 +18,7 @@
     --text: #212529;
     --text-dim: #495057;
     --text-dimmer: #868e96;
-    --accent: #274e13;           /* เปลี่ยนเป็นน้ำเงินสุภาพ หรือใช้เขียวเดิม #38a169 */
+    --accent: #274e13;
     --accent-dim: #2c5282;
     --accent-bg: rgba(43, 108, 176, 0.06);
     --pass: #2f855a;
@@ -29,7 +29,7 @@
     --warn-bg: rgba(183, 121, 31, 0.08);
     --radius: 8px;
     --mono: 'DM Mono', monospace;
-   --serif: 'Instrument Serif', serif;
+    --serif: 'Instrument Serif', serif;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
@@ -43,8 +43,8 @@
     overflow-x: hidden;
   }
 
-
-
+  /* ── NOISE TEXTURE OVERLAY (disabled for light theme) ── */
+  body::before { display: none; }
 
   /* ── LAYOUT ── */
   .app {
@@ -659,6 +659,32 @@
     to { opacity: 1; transform: translateX(0); }
   }
 
+
+  /* ── AI OPINION BLOCK ── */
+  .ai-opinion-block {
+    margin-top: 14px;
+    background: rgba(200, 240, 96, 0.04);
+    border: 1px solid rgba(200, 240, 96, 0.18);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+
+  .ai-opinion-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .ai-opinion-text {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.75;
+    white-space: pre-wrap;
+  }
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -692,9 +718,9 @@
 
   <!-- HEADER -->
   <header>
-    <div class="header-eyebrow">// Recruitment Tool</div>
+    <div class="header-eyebrow">// AI-Powered Recruitment Tool</div>
     <h1>Resume <em>Screener</em></h1>
-    <p class="header-sub">อัปโหลด PDF หลายไฟล์ · กำหนดเกณฑ์ JD + Keywords </p>
+    <p class="header-sub">อัปโหลด PDF หลายไฟล์ · กำหนดเกณฑ์ JD + Keywords · ให้ Claude คัดกรองอัตโนมัติ</p>
   </header>
 
   <!-- SETUP GRID -->
@@ -707,7 +733,7 @@
         <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
         <button class="btn-icon" onclick="toggleKey()">👁</button>
       </div>
-      <p class="input-hint">ขอ key ได้ที่ console.anthropic.com</p>
+      <p class="input-hint">Key ไม่ถูกบันทึก · ใช้เฉพาะใน session นี้</p>
     </div>
 
     <!-- THRESHOLD -->
@@ -726,27 +752,14 @@
       <textarea id="jd" placeholder="วางรายละเอียดตำแหน่งงานที่นี่&#10;&#10;ตัวอย่าง:&#10;ต้องการ Software Engineer ที่มีประสบการณ์ React ≥ 3 ปี&#10;ทักษะ Node.js, TypeScript จะได้รับการพิจารณาเป็นพิเศษ&#10;สามารถทำงานเป็นทีมและสื่อสารภาษาอังกฤษได้ดี"></textarea>
     </div>
 
-    <!-- KEYWORDS -->
-    <div class="card" style="animation-delay:0.2s">
-      <div class="card-label">04 / Required Keywords / Conditions</div>
-      <div class="tag-input-row">
-        <input type="text" id="keywordInput" placeholder="เพิ่ม keyword แล้วกด Enter" onkeydown="addKeyword(event)">
-        <button class="btn-icon" onclick="addKeywordBtn()">+</button>
-      </div>
-      <div class="tags-wrap" id="tagsWrap">
-        <!-- tags rendered here -->
-      </div>
-      <p class="input-hint" style="margin-top:10px">ตัวอย่าง: Python · 5+ years · MBA · AWS certified</p>
-    </div>
-
     <!-- FILE UPLOAD -->
-    <div class="card grid-full" style="animation-delay:0.25s">
-      <div class="card-label">05 / Upload Resume PDFs</div>
+    <div class="card grid-full" style="animation-delay:0.2s">
+      <div class="card-label">04 / Upload Resume Files</div>
       <div class="dropzone" id="dropzone" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave()">
-        <input type="file" id="fileInput" multiple accept=".pdf" onchange="handleFiles(event.target.files)">
+        <input type="file" id="fileInput" multiple accept=".pdf,image/jpeg,image/png,image/webp" onchange="handleFiles(event.target.files)">
         <div class="dropzone-icon">📄</div>
-        <div class="dropzone-text"><strong>คลิกเพื่อเลือก</strong> หรือลาก PDF มาวางที่นี่</div>
-        <div class="dropzone-hint">รองรับ PDF เท่านั้น · หลายไฟล์พร้อมกันได้</div>
+        <div class="dropzone-text"><strong>คลิกเพื่อเลือก</strong> หรือลากไฟล์มาวางที่นี่</div>
+        <div class="dropzone-hint">รองรับ PDF · JPG · PNG · WEBP · หลายไฟล์พร้อมกันได้</div>
       </div>
       <div class="file-list" id="fileList"></div>
     </div>
@@ -794,8 +807,8 @@
   </div>
 
   <footer>
-    <span>Resume Screener · Created by Wassana Pongkawong</span>
-    <span>· </span>
+    <span>Resume Screener · Powered by Claude claude-sonnet-4-20250514</span>
+    <span>Static deploy · API key stays in your browser</span>
   </footer>
 
 </div>
@@ -804,7 +817,6 @@
 // ── STATE ──
 const state = {
   files: [],
-  keywords: [],
   results: [],
   currentFilter: 'all'
 };
@@ -824,31 +836,7 @@ function updateThreshold() {
   document.getElementById('thresholdVal').textContent = v + '%';
 }
 
-// ── KEYWORDS ──
-function addKeyword(e) {
-  if (e.key === 'Enter') addKeywordBtn();
-}
 
-function addKeywordBtn() {
-  const input = document.getElementById('keywordInput');
-  const val = input.value.trim();
-  if (!val || state.keywords.includes(val)) return;
-  state.keywords.push(val);
-  input.value = '';
-  renderTags();
-}
-
-function removeKeyword(kw) {
-  state.keywords = state.keywords.filter(k => k !== kw);
-  renderTags();
-}
-
-function renderTags() {
-  const wrap = document.getElementById('tagsWrap');
-  wrap.innerHTML = state.keywords.map(k => `
-    <span class="tag">${escHtml(k)}<button class="tag-remove" onclick="removeKeyword('${escHtml(k)}')">×</button></span>
-  `).join('');
-}
 
 // ── FILES ──
 function handleDragOver(e) {
@@ -863,7 +851,8 @@ function handleDragLeave() {
 function handleDrop(e) {
   e.preventDefault();
   document.getElementById('dropzone').classList.remove('drag-over');
-  const files = [...e.dataTransfer.files].filter(f => f.type === 'application/pdf');
+  const allowed = ['application/pdf','image/jpeg','image/png','image/webp'];
+  const files = [...e.dataTransfer.files].filter(f => allowed.includes(f.type));
   addFiles(files);
 }
 
@@ -887,14 +876,16 @@ function removeFile(idx) {
 
 function renderFileList() {
   const list = document.getElementById('fileList');
-  list.innerHTML = state.files.map((f, i) => `
+  list.innerHTML = state.files.map((f, i) => {
+    const icon = f.type === 'application/pdf' ? '📄' : '🖼';
+    return `
     <div class="file-chip">
-      <span>📄</span>
+      <span>${icon}</span>
       <span class="file-chip-name">${escHtml(f.name)}</span>
       <span class="file-chip-size">${formatBytes(f.size)}</span>
       <button class="file-chip-remove" onclick="removeFile(${i})">×</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── PDF TEXT EXTRACTION ──
@@ -910,6 +901,20 @@ async function extractPdfText(file) {
   return text.trim();
 }
 
+// ── IMAGE TO BASE64 ──
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function isImage(file) {
+  return file.type.startsWith('image/');
+}
+
 // ── MAIN SCREENING ──
 async function runScreening() {
   clearError();
@@ -921,8 +926,8 @@ async function runScreening() {
   // Validate
   if (!apiKey) return showError('กรุณากรอก Anthropic API Key');
   if (!apiKey.startsWith('sk-ant-')) return showError('API Key ไม่ถูกต้อง (ต้องขึ้นต้นด้วย sk-ant-)');
-  if (!jd && state.keywords.length === 0) return showError('กรุณากรอก Job Description หรือเพิ่ม Keyword อย่างน้อย 1 รายการ');
-  if (state.files.length === 0) return showError('กรุณาเพิ่มไฟล์ PDF อย่างน้อย 1 ไฟล์');
+  if (!jd) return showError('กรุณากรอก Job Description');
+  if (state.files.length === 0) return showError('กรุณาเพิ่มไฟล์อย่างน้อย 1 ไฟล์');
 
   // Reset
   state.results = [];
@@ -942,53 +947,34 @@ async function runScreening() {
     log(`กำลังอ่าน: ${file.name}`, 'info');
 
     try {
-      // Extract PDF text
-      const text = await extractPdfText(file);
-      if (!text || text.length < 50) {
-        log(`${file.name} — อ่านข้อความไม่ได้ (อาจเป็น scanned PDF)`, 'fail');
-        state.results.push({
-          file,
-          name: file.name,
-          score: 0,
-          passed: false,
-          verdict: 'อ่าน PDF ไม่ได้',
-          analysis: 'ไม่สามารถดึงข้อความจาก PDF ได้ อาจเป็นไฟล์ที่ scan มา',
-          keywordsFound: [],
-          keywordsMissing: state.keywords,
-          text: ''
-        });
-        setProgress(Math.round(((i + 1) / total) * 100));
-        continue;
+      let result;
+      if (isImage(file)) {
+        log(`วิเคราะห์รูปภาพด้วย AI: ${file.name}`, 'info');
+        const base64 = await fileToBase64(file);
+        result = await analyzeResumeImage(base64, file.type, jd, apiKey);
+      } else {
+        const text = await extractPdfText(file);
+        if (!text || text.length < 50) {
+          log(`${file.name} — อ่านข้อความไม่ได้ (อาจเป็น scanned PDF)`, 'fail');
+          state.results.push({ file, name: file.name, score: 0, passed: false,
+            verdict: 'อ่าน PDF ไม่ได้', analysis: 'ไม่สามารถดึงข้อความจาก PDF ได้ อาจเป็นไฟล์ที่ scan มา',
+            ai_opinion: '' });
+          setProgress(Math.round(((i + 1) / total) * 100));
+          continue;
+        }
+        log(`วิเคราะห์ด้วย AI: ${file.name}`, 'info');
+        result = await analyzeResumePdf(text, jd, apiKey);
       }
-
-      log(`วิเคราะห์ด้วย AI: ${file.name}`, 'info');
-
-      // Call Claude API
-      const result = await analyzeResume(text, jd, state.keywords, threshold, apiKey);
       result.file = file;
       result.name = file.name;
       result.passed = result.score >= threshold;
       state.results.push(result);
-
-      if (result.passed) {
-        log(`${file.name} — ผ่าน (${result.score}%)`, 'ok');
-      } else {
-        log(`${file.name} — ไม่ผ่าน (${result.score}%)`, 'fail');
-      }
+      log(`${file.name} — ${result.passed ? 'ผ่าน' : 'ไม่ผ่าน'} (${result.score}%)`, result.passed ? 'ok' : 'fail');
 
     } catch (err) {
       log(`${file.name} — Error: ${err.message}`, 'fail');
-      state.results.push({
-        file,
-        name: file.name,
-        score: 0,
-        passed: false,
-        verdict: 'เกิดข้อผิดพลาด',
-        analysis: err.message,
-        keywordsFound: [],
-        keywordsMissing: state.keywords,
-        text: ''
-      });
+      state.results.push({ file, name: file.name, score: 0, passed: false,
+        verdict: 'เกิดข้อผิดพลาด', analysis: err.message, ai_opinion: '' });
     }
 
     setProgress(Math.round(((i + 1) / total) * 100));
@@ -1001,80 +987,68 @@ async function runScreening() {
   renderResults(threshold);
 }
 
-// ── CLAUDE API CALL ──
-async function analyzeResume(resumeText, jd, keywords, threshold, apiKey) {
-  const kwSection = keywords.length > 0
-    ? `\n\nREQUIRED KEYWORDS/CONDITIONS (ต้องตรวจสอบทีละรายการ):\n${keywords.map((k, i) => `${i + 1}. ${k}`).join('\n')}`
-    : '';
-
-  const prompt = `คุณคือผู้เชี่ยวชาญด้านการคัดเลือกบุคลากร วิเคราะห์ resume ด้านล่างและให้คะแนนความเหมาะสม
+// ── SHARED HELPERS ──
+function buildSystemPrompt(jd) {
+  return `คุณคือผู้เชี่ยวชาญด้านการคัดเลือกบุคลากร วิเคราะห์ resume และให้คะแนนความเหมาะสมกับตำแหน่งงาน
 
 JOB DESCRIPTION:
-${jd || '(ไม่ได้ระบุ — ประเมินจาก keywords เท่านั้น)'}
-${kwSection}
-
-RESUME TEXT:
----
-${resumeText.substring(0, 6000)}
----
+${jd}
 
 ตอบกลับใน JSON format เท่านั้น ไม่มี markdown backticks:
 {
   "score": <0-100>,
-  "verdict": "<สรุปสั้น 1 ประโยค>",
-  "analysis": "<วิเคราะห์ละเอียด 3-5 ประโยค: จุดเด่น จุดด้อย ความเหมาะสมกับตำแหน่ง>",
-  "keywordsFound": [<keywords ที่พบในแต่ละรายการ>],
-  "keywordsMissing": [<keywords ที่ไม่พบ>]
+  "verdict": "<สรุปสั้น 1 ประโยคภาษาไทย>",
+  "analysis": "<วิเคราะห์ข้อมูลใน resume 2-3 ประโยค: ประสบการณ์ การศึกษา ทักษะ>",
+  "ai_opinion": "<ความเห็นในฐานะ recruiter 3-5 ประโยคภาษาไทย: ผู้สมัครเหมาะกับตำแหน่งนี้หรือไม่ เพราะอะไร จุดเด่น สิ่งที่ขาด และคำแนะนำ: ควรเรียกสัมภาษณ์ / ไม่แนะนำ / ควรพิจารณาเพิ่มเติม>"
 }
 
-เกณฑ์คะแนน:
-- 90-100: เหมาะสมมาก ตรงทุกข้อ
-- 70-89: เหมาะสมดี ตรงส่วนใหญ่
-- 50-69: พอใช้ได้ ขาดบางส่วน
-- 0-49: ไม่เหมาะสม ขาดคุณสมบัติสำคัญ`;
+เกณฑ์คะแนน: 90-100 เหมาะสมมาก · 70-89 เหมาะสมดี · 50-69 พอใช้ · 0-49 ไม่เหมาะสม`;
+}
 
+function parseClaudeResponse(rawText) {
+  const clean = rawText.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+  return {
+    score: Math.max(0, Math.min(100, parseInt(parsed.score) || 0)),
+    verdict: parsed.verdict || '',
+    analysis: parsed.analysis || '',
+    ai_opinion: parsed.ai_opinion || '',
+  };
+}
+
+// ── CLAUDE API — PDF (text) ──
+async function analyzeResumePdf(resumeText, jd, apiKey) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+      system: buildSystemPrompt(jd),
+      messages: [{ role: 'user', content: `RESUME TEXT:\n---\n${resumeText.substring(0, 6000)}\n---\nวิเคราะห์และตอบใน JSON เท่านั้น` }]
     })
   });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `API Error ${response.status}`);
-  }
-
+  if (!response.ok) { const e = await response.json().catch(()=>({})); throw new Error(e?.error?.message || `API Error ${response.status}`); }
   const data = await response.json();
-  const rawText = data.content?.[0]?.text || '';
+  return parseClaudeResponse(data.content?.[0]?.text || '');
+}
 
-  try {
-    const clean = rawText.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-    return {
-      score: Math.max(0, Math.min(100, parseInt(parsed.score) || 0)),
-      verdict: parsed.verdict || '',
-      analysis: parsed.analysis || '',
-      keywordsFound: Array.isArray(parsed.keywordsFound) ? parsed.keywordsFound : [],
-      keywordsMissing: Array.isArray(parsed.keywordsMissing) ? parsed.keywordsMissing : []
-    };
-  } catch {
-    return {
-      score: 0,
-      verdict: 'Parse error',
-      analysis: rawText,
-      keywordsFound: [],
-      keywordsMissing: keywords
-    };
-  }
+// ── CLAUDE API — IMAGE (vision) ──
+async function analyzeResumeImage(base64, mimeType, jd, apiKey) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+      system: buildSystemPrompt(jd),
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } },
+        { type: 'text', text: 'นี่คือรูปภาพ resume วิเคราะห์และตอบใน JSON เท่านั้น' }
+      ]}]
+    })
+  });
+  if (!response.ok) { const e = await response.json().catch(()=>({})); throw new Error(e?.error?.message || `API Error ${response.status}`); }
+  const data = await response.json();
+  return parseClaudeResponse(data.content?.[0]?.text || '');
 }
 
 // ── RENDER RESULTS ──
@@ -1108,9 +1082,6 @@ function renderResultCards(filter) {
 
   list.innerHTML = results.map((r, i) => {
     const cls = r.passed ? 'pass' : 'fail';
-    const kwFoundHtml = r.keywordsFound.map(k => `<span class="badge found">✓ ${escHtml(k)}</span>`).join('');
-    const kwMissingHtml = r.keywordsMissing.map(k => `<span class="badge missing">✗ ${escHtml(k)}</span>`).join('');
-
     return `
     <div class="result-card ${cls}" id="rc-${i}">
       <div class="result-card-header" onclick="toggleCard(${i})">
@@ -1118,13 +1089,13 @@ function renderResultCards(filter) {
         <div class="result-info">
           <div class="result-name">${escHtml(r.name)}</div>
           <div class="result-verdict ${cls}">${r.passed ? '✅ ผ่านเกณฑ์' : '❌ ไม่ผ่านเกณฑ์'} · ${escHtml(r.verdict)}</div>
-          ${(kwFoundHtml || kwMissingHtml) ? `<div class="result-badges">${kwFoundHtml}${kwMissingHtml}</div>` : ''}
         </div>
         <button class="result-toggle">▾</button>
       </div>
       <div class="result-detail">
         <div class="score-bar-wrap"><div class="score-bar ${cls}" style="width:${r.score}%"></div></div>
         <div class="result-analysis">${escHtml(r.analysis)}</div>
+        ${r.ai_opinion ? `<div class="ai-opinion-block"><div class="ai-opinion-label">🤖 ความเห็น AI</div><div class="ai-opinion-text">${escHtml(r.ai_opinion)}</div></div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1166,14 +1137,14 @@ async function downloadPassed() {
 function exportCSV() {
   if (state.results.length === 0) return showError('ยังไม่มีผลลัพธ์');
 
-  const header = ['ชื่อไฟล์', 'คะแนน', 'สถานะ', 'สรุป', 'Keywords ที่พบ', 'Keywords ที่ขาด'];
+  const header = ['ชื่อไฟล์', 'คะแนน', 'สถานะ', 'สรุป', 'วิเคราะห์', 'ความเห็น AI'];
   const rows = state.results.map(r => [
     r.name,
     r.score,
     r.passed ? 'ผ่าน' : 'ไม่ผ่าน',
-    r.verdict.replace(/,/g, ';'),
-    r.keywordsFound.join('; '),
-    r.keywordsMissing.join('; ')
+    r.verdict || '',
+    r.analysis || '',
+    r.ai_opinion || ''
   ]);
 
   const csv = [header, ...rows].map(row => row.map(c => `"${c}"`).join(',')).join('\n');
